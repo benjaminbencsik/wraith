@@ -1,4 +1,4 @@
-# recon
+# wraith
 
 Fully automated overnight bug bounty recon scanner — enumerate subdomains, probe live hosts, scan for vulnerabilities, capture screenshots, hunt secrets, and get notified when new findings appear.
 
@@ -17,8 +17,8 @@ Fully automated overnight bug bounty recon scanner — enumerate subdomains, pro
 ## Quick Start
 
 ```bash
-git clone https://github.com/benjaminbencsik/recon.git
-cd recon
+git clone https://github.com/benjaminbencsik/wraith.git
+cd wraith
 chmod +x *.sh
 
 # Install all tools (auto-detects OS)
