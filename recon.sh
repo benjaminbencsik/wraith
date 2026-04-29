@@ -134,12 +134,12 @@ require subfinder assetfinder findomain httpx nmap nuclei ffuf \
 # ─── Banner ───────────────────────────────────────────────────────────────────
 START_TIME=$(date +%s)
 echo -e "${BOLD}${GREEN}"
-echo "  ██████╗ ███████╗ ██████╗ ██████╗ ███╗   ██╗"
-echo "  ██╔══██╗██╔════╝██╔════╝██╔═══██╗████╗  ██║"
-echo "  ██████╔╝█████╗  ██║     ██║   ██║██╔██╗ ██║"
-echo "  ██╔══██╗██╔══╝  ██║     ██║   ██║██║╚██╗██║"
-echo "  ██║  ██║███████╗╚██████╗╚██████╔╝██║ ╚████║"
-echo "  ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝"
+echo "  ██╗    ██╗██████╗  █████╗ ██╗████████╗██╗  ██╗"
+echo "  ██║    ██║██╔══██╗██╔══██╗██║╚══██╔══╝██║  ██║"
+echo "  ██║ █╗ ██║██████╔╝███████║██║   ██║   ███████║"
+echo "  ██║███╗██║██╔══██╗██╔══██║██║   ██║   ██╔══██║"
+echo "  ╚███╔███╔╝██║  ██║██║  ██║██║   ██║   ██║  ██║"
+echo "   ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝"
 echo -e "${RESET}"
 log "Target    : $TARGET"
 log "Output    : $OUT"
@@ -189,8 +189,7 @@ fi
 step "PHASE 2 — Live Host Detection (httpx)"
 
 if ! skip_if_done "2"; then
-    httpx \
-        -l "$OUT/subdomains/all_subs.txt" \
+    cat "$OUT/subdomains/all_subs.txt" | httpx \
         -silent \
         -status-code \
         -title \
@@ -200,7 +199,12 @@ if ! skip_if_done "2"; then
         -threads "$HTTPX_THREADS" \
         -timeout 10 \
         -o "$OUT/live/live_hosts.txt" \
-        2>>"$LOG" || warn "httpx had errors"
+        2>>"$LOG" || warn "httpx exited with errors — continuing with partial results"
+
+    if [[ ! -f "$OUT/live/live_hosts.txt" ]]; then
+        warn "httpx produced no output file — creating empty placeholder"
+        touch "$OUT/live/live_hosts.txt"
+    fi
 
     awk '{print $1}' "$OUT/live/live_hosts.txt" | sort -u > "$OUT/live/urls.txt"
     LIVE_COUNT=$(wc -l < "$OUT/live/urls.txt")
@@ -214,7 +218,10 @@ fi
 step "PHASE 3 — Port Scanning (nmap)"
 
 if ! skip_if_done "3"; then
-    log "Resolving IPs..."
+    if [[ ! -s "$OUT/live/urls.txt" ]]; then
+        warn "No live hosts to port scan — skipping nmap"
+        mark_done "3"
+    else
     while IFS= read -r url; do
         host="${url#http://}"; host="${host#https://}"; host="${host%%/*}"
         dig +short "$host" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
@@ -238,6 +245,7 @@ if ! skip_if_done "3"; then
 
     ok "Port scan complete"
     mark_done "3"
+    fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -267,7 +275,7 @@ if ! skip_if_done "4"; then
         2>>"$LOG" || warn "katana had errors"
 
     cat "$OUT/web/gau_urls.txt" "$OUT/web/katana_urls.txt" 2>/dev/null \
-        | sort -u > "$OUT/web/all_urls.txt"
+        | sort -u > "$OUT/web/all_urls.txt" || touch "$OUT/web/all_urls.txt"
 
     URL_COUNT=$(wc -l < "$OUT/web/all_urls.txt")
     ok "Total unique URLs: $URL_COUNT"
