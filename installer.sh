@@ -151,7 +151,7 @@ define_tool "katana"      "go"   "github.com/projectdiscovery/katana/cmd/katana@
 define_tool "dalfox"      "go"   "github.com/hahwul/dalfox/v2@latest"                              "XSS scanner"
 define_tool "anew"        "go"   "github.com/tomnomnom/anew@latest"                                 "Append new unique lines"
 define_tool "gowitness"   "go"   "github.com/sensepost/gowitness@latest"                           "Web screenshots"
-define_tool "trufflehog"  "go"   "github.com/trufflesecurity/trufflehog/v3@latest"                 "Secret/credential scanner"
+define_tool "trufflehog"  "script" "https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh" "Secret/credential scanner"
 
 # Package manager tools
 define_tool "nmap"        "pkg"  "nmap"     "Port/service scanner"
@@ -161,7 +161,7 @@ define_tool "git"         "pkg"  "git"      "Version control"
 define_tool "python3"     "pkg"  "python3"  "Python runtime"
 
 # curl-installed tools
-define_tool "findomain"   "curl" "https://github.com/Findomain/Findomain/releases/latest/download/findomain-linux-musl.zip|findomain" "Subdomain enumeration"
+define_tool "findomain"   "curl" "https://github.com/findomain/findomain/releases/latest/download/findomain-linux.zip|findomain" "Subdomain enumeration"
 
 # pip tools
 define_tool "sqlmap"      "pip"  "sqlmap"   "SQL injection scanner"
@@ -234,8 +234,13 @@ install_tool() {
                 ok "$bin installed via pip3" || { err "Failed to install $bin"; return 1; }
             ;;
 
-        *)
-            err "Unknown install type '$type' for $bin"
+        script)
+            install_log "Installing $bin via official install script..."
+            curl -fsSL "$install_val" | sudo sh -s -- -b /usr/local/bin >> "$INSTALL_LOG" 2>&1 && \
+                ok "$bin installed via install script" || { err "Failed to install $bin"; return 1; }
+            ;;
+
+        *)            err "Unknown install type '$type' for $bin"
             return 1
             ;;
     esac
