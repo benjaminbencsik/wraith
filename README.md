@@ -145,6 +145,4 @@ Only run against targets you have explicit written permission to test. The autho
 
 ---
 
-## License
 
-MIT
